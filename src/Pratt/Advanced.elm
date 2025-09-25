@@ -2,7 +2,7 @@ module Pratt.Advanced exposing
     ( Config, expression
     , subExpression
     , literal, constant, prefix
-    , infixLeft, infixRight, postfix
+    , infixLeft, infixLeft2, infixRight, infixRight2, postfix
     )
 
 {-| `Pratt.Advanced` provides the same API as [`Pratt`](Pratt),
@@ -29,7 +29,7 @@ This allows to have custom `context` and `problem` types to improve error messag
 
 ## **andThenOneOf** helpers
 
-@docs infixLeft, infixRight, postfix
+@docs infixLeft, infixLeft2, infixRight, infixRight2, postfix
 
 -}
 
@@ -165,24 +165,39 @@ prefix precedence operator apply config =
 {-| Just like [`Pratt.infixLeft`](Pratt#infixLeft).
 -}
 infixLeft : Int -> Parser c x () -> (e -> e -> e) -> Config c x e -> ( Int, e -> Parser c x e )
-infixLeft precedence =
-    infixHelp ( precedence, precedence )
+infixLeft precedence operatorParser apply config =
+    infixHelp ( precedence, precedence ) operatorParser (\() -> apply) config
+
+
+{-| Just like [`Pratt.infixLeft2`](Pratt#infixLeft2).
+-}
+infixLeft2 : Int -> Parser c x a -> (a -> e -> e -> e) -> Config c x e -> ( Int, e -> Parser c x e )
+infixLeft2 precedence operatorParser apply config =
+    infixHelp ( precedence, precedence ) operatorParser apply config
 
 
 {-| Just like [`Pratt.infixRight`](Pratt#infixRight).
 -}
 infixRight : Int -> Parser c x () -> (e -> e -> e) -> Config c x e -> ( Int, e -> Parser c x e )
-infixRight precedence =
+infixRight precedence operatorParser apply config =
     -- To get right associativity, use a right precedence of (precedence - 1)
-    infixHelp ( precedence, precedence - 1 )
+    infixHelp ( precedence, precedence - 1 ) operatorParser (\() -> apply) config
 
 
-infixHelp : ( Int, Int ) -> Parser c x () -> (e -> e -> e) -> Config c x e -> ( Int, e -> Parser c x e )
-infixHelp ( leftPrecedence, rightPrecedence ) operator apply config =
+{-| Just like [`Pratt.infixRight2`](Pratt#infixRight2).
+-}
+infixRight2 : Int -> Parser c x a -> (a -> e -> e -> e) -> Config c x e -> ( Int, e -> Parser c x e )
+infixRight2 precedence operatorParser apply config =
+    -- To get right associativity, use a right precedence of (precedence - 1)
+    infixHelp ( precedence, precedence - 1 ) operatorParser apply config
+
+
+infixHelp : ( Int, Int ) -> Parser c x a -> (a -> e -> e -> e) -> Config c x e -> ( Int, e -> Parser c x e )
+infixHelp ( leftPrecedence, rightPrecedence ) operatorParser apply config =
     ( leftPrecedence
     , \leftExpression ->
-        succeed (apply leftExpression)
-            |. operator
+        succeed (\operator rightExpression -> apply operator leftExpression rightExpression)
+            |= operatorParser
             |= subExpression rightPrecedence config
     )
 

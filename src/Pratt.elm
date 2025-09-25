@@ -2,7 +2,7 @@ module Pratt exposing
     ( Config, expression
     , subExpression
     , literal, constant, prefix
-    , infixLeft, infixRight, postfix
+    , infixLeft, infixLeft2, infixRight, infixRight2, postfix
     )
 
 {-|
@@ -11,8 +11,8 @@ module Pratt exposing
   - **Configuration helpers**: [`subExpression`](#subExpression)
       - **oneOf** helpers: [`literal`](#literal) [`constant`](#constant)
         [`prefix`](#prefix)
-      - **andThenOneOf** helpers: [`infixLeft`](#infixLeft)
-        [`infixRight`](#infixRight) [`postfix`](#postfix)
+      - **andThenOneOf** helpers: [`infixLeft`](#infixLeft) [`infixLeft2`](#infixLeft2)
+        [`infixRight`](#infixRight) [`infixRight2`](#infixRight2) [`postfix`](#postfix)
 
 
 # Expression parser
@@ -32,7 +32,7 @@ module Pratt exposing
 
 ## **andThenOneOf** helpers
 
-@docs infixLeft, infixRight, postfix
+@docs infixLeft, infixLeft2, infixRight, infixRight2, postfix
 
 -}
 
@@ -365,6 +365,14 @@ infixLeft =
     Advanced.infixLeft
 
 
+{-| Like `infixLeft`, but pass the result of the operator parser into the
+concatenation function.
+-}
+infixLeft2 : Int -> Parser a -> (a -> expr -> expr -> expr) -> Config expr -> ( Int, expr -> Parser expr )
+infixLeft2 =
+    Advanced.infixLeft2
+
+
 {-| Build a parser for an _infix_ expression with a right-associative operator
 and a given _precedence_.
 
@@ -392,6 +400,14 @@ expression with the _precedence_ of the infix operator minus 1.
 infixRight : Int -> Parser () -> (expr -> expr -> expr) -> Config expr -> ( Int, expr -> Parser expr )
 infixRight =
     Advanced.infixRight
+
+
+{-| Like `infixRight`, but pass the result of the operator parser into the
+concatenation function.
+-}
+infixRight2 : Int -> Parser a -> (a -> expr -> expr -> expr) -> Config expr -> ( Int, expr -> Parser expr )
+infixRight2 =
+    Advanced.infixRight2
 
 
 {-| Build a parser for a _postfix_ expression with a given _precedence_.
